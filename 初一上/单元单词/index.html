@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播放列表 - 初一上 (单元单词)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #1890ff;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        header a {
+            color: white;
+            text-decoration: none;
+            position: absolute;
+            left: 20px;
+            top: 18px;
+            font-size: 1.2em;
+        }
+        #playlist {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #playlist li {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #playlist li:hover {
+            background-color: #e6f7ff;
+        }
+        #playlist li.playing {
+            background-color: #1890ff;
+            color: white;
+            font-weight: bold;
+        }
+        #playlist li.playing .track-number {
+             color: white;
+        }
+        .track-number {
+            color: #888;
+            margin-right: 15px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="../../index.html">&larr; 返回</a>
+            <h1>初一上 (单元单词)</h1>
+        </header>
+        <audio id="audio-player" controls style="width: 100%; position: sticky; top: 0; background: #fff;"></audio>
+        <ul id="playlist">
+        </ul>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const audioPlayer = document.getElementById('audio-player');
+            const playlistElement = document.getElementById('playlist');
+            const tracks = ["7a_p90_m1_words.mp3", "7a_p90_m2_words.mp3", "7a_p91_m3_words.mp3", "7a_p92_m4_words.mp3", "7a_p93_m5_words.mp3", "7a_p93_m6_words.mp3", "7a_p93_Revision A_words.mp3", "7a_p94_m7_words.mp3", "7a_p95_m9_words.mp3", "7a_p96_m10_words.mp3", "7a_p96_Revision B_words.mp3", "JH Starter7A M1 Words.mp3", "JH Starter7A M2 Words.mp3", "JH Starter7A M3 Words.mp3", "JH Starter7A M4 Words.mp3", "new_jh1_m8_words.mp3"];
+            let currentTrackIndex = 0;
+
+            function renderPlaylist() {
+                playlistElement.innerHTML = '';
+                tracks.forEach((track, index) => {
+                    const li = document.createElement('li');
+                    li.dataset.index = index;
+                    
+                    const trackNumber = document.createElement('span');
+                    trackNumber.className = 'track-number';
+                    trackNumber.textContent = `${index + 1}.`;
+
+                    const trackName = document.createElement('span');
+                    trackName.textContent = track;
+
+                    li.appendChild(trackNumber);
+                    li.appendChild(trackName);
+
+                    li.addEventListener('click', function() {
+                        playTrack(index);
+                    });
+                    playlistElement.appendChild(li);
+                });
+            }
+
+            function playTrack(index) {
+                if (index >= tracks.length || index < 0) return;
+
+                currentTrackIndex = index;
+                audioPlayer.src = tracks[index];
+                audioPlayer.play();
+
+                updatePlayingStatus();
+            }
+
+            function updatePlayingStatus() {
+                const listItems = playlistElement.querySelectorAll('li');
+                listItems.forEach((item, index) => {
+                    if (index === currentTrackIndex) {
+                        item.classList.add('playing');
+                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        item.classList.remove('playing');
+                    }
+                });
+            }
+
+            audioPlayer.addEventListener('ended', function() {
+                playTrack(currentTrackIndex + 1);
+            });
+
+            // Initial setup
+            renderPlaylist();
+            playTrack(0); // Autoplay first track
+        });
+    </script>
+</body>
+</html>
