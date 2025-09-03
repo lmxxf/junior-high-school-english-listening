@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播放列表</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #1890ff;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        header a {
+            color: white;
+            text-decoration: none;
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+            padding: 0 10px;
+        }
+        #audio-player-container {
+            position: sticky;
+            top: 58px; /* Height of header */
+            z-index: 10;
+            background: #fff;
+            padding: 10px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        audio {
+            width: 100%;
+        }
+        #subtitle-display {
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.1em;
+            color: #333;
+            line-height: 1.4;
+        }
+        #playlist {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #playlist li {
+            padding: 18px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            font-size: 1em;
+        }
+        #playlist li:hover {
+            background-color: #e6f7ff;
+        }
+        #playlist li.playing {
+            background-color: #1890ff;
+            color: white;
+            font-weight: 500;
+        }
+        #playlist li.playing .track-number {
+             color: #e6f7ff;
+        }
+        .track-number {
+            color: #888;
+            margin-right: 15px;
+            font-size: 0.9em;
+        }
+        .track-name {
+            word-break: break-all;
+        }
+        .error-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #ff4d4f;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html">&larr;</a>
+            <h1 id="header-title">播放列表</h1>
+        </header>
+        <div id="audio-player-container">
+            <audio id="audio-player" controls crossorigin="anonymous"></audio>
+            <div id="subtitle-display"></div>
+        </div>
+        <ul id="playlist">
+        </ul>
+        <div id="error-container"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const audioPlayer = document.getElementById('audio-player');
+            const playlistElement = document.getElementById('playlist');
+            const headerTitle = document.getElementById('header-title');
+            const pageTitle = document.querySelector('title');
+            const errorContainer = document.getElementById('error-container');
+
+            let tracks = [];
+            let currentTrackIndex = 0;
+            let directory = '';
+
+            function displayError(message) {
+                errorContainer.innerHTML = `<p class="error-message">${message}</p>`;
+            }
+
+            function getDirectoryFromURL() {
+                const params = new URLSearchParams(window.location.search);
+                return params.get('dir');
+            }
+
+            async function loadPlaylist() {
+                directory = getDirectoryFromURL();
+                if (!directory) {
+                    displayError('错误：未指定要加载的目录。请确保URL包含 "?dir=目录名"');
+                    return;
+                }
+
+                // Update titles
+                const decodedDir = decodeURIComponent(directory);
+                headerTitle.textContent = decodedDir;
+                pageTitle.textContent = `播放列表 - ${decodedDir}`;
+
+                try {
+                    const response = await fetch(`${directory}/playlist.json`);
+                    if (!response.ok) {
+                        throw new Error(`无法加载播放列表。请确保 "${directory}/playlist.json" 文件存在。`);
+                    }
+                    tracks = await response.json();
+                    if (tracks.length === 0) {
+                        displayError(`"${decodedDir}" 目录中没有找到可播放的曲目。`);
+                    } else {
+                        renderPlaylist();
+                    }
+                } catch (error) {
+                    displayError(error.message);
+                    console.error(error);
+                }
+            }
+
+            function renderPlaylist() {
+                playlistElement.innerHTML = '';
+                tracks.forEach((track, index) => {
+                    const li = document.createElement('li');
+                    li.dataset.index = index;
+                    
+                    const trackNumber = document.createElement('span');
+                    trackNumber.className = 'track-number';
+                    trackNumber.textContent = `${index + 1}.`;
+
+                    const trackName = document.createElement('span');
+                    trackName.className = 'track-name';
+                    trackName.textContent = track.title;
+
+                    li.appendChild(trackNumber);
+                    li.appendChild(trackName);
+
+                    li.addEventListener('click', function() {
+                        playTrack(index);
+                    });
+                    playlistElement.appendChild(li);
+                });
+            }
+
+            function playTrack(index) {
+                if (index >= tracks.length || index < 0) return;
+
+                currentTrackIndex = index;
+                const track = tracks[index];
+                const trackSrc = `${directory}/${track.src}`;
+                
+                // Clear previous sources and tracks
+                audioPlayer.innerHTML = '';
+
+                const sourceElement = document.createElement('source');
+                sourceElement.src = trackSrc;
+                sourceElement.type = 'audio/mpeg';
+                audioPlayer.appendChild(sourceElement);
+
+                if (track.vtt) {
+                    const subtitleSrc = `${directory}/${track.vtt}`;
+                    const trackElement = document.createElement('track');
+                    trackElement.default = true;
+                    trackElement.kind = 'subtitles';
+                    trackElement.srclang = 'en'; // srclang is mandatory, 'en' is a safe default
+                    trackElement.src = subtitleSrc;
+                    audioPlayer.appendChild(trackElement);
+                }
+                
+                audioPlayer.load();
+                audioPlayer.play().catch(e => console.error("Playback failed:", e));
+
+                updatePlayingStatus();
+            }
+
+            function updatePlayingStatus() {
+                const listItems = playlistElement.querySelectorAll('li');
+                listItems.forEach((item, index) => {
+                    if (index === currentTrackIndex) {
+                        item.classList.add('playing');
+                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        item.classList.remove('playing');
+                    }
+                });
+            }
+
+            audioPlayer.addEventListener('ended', function() {
+                playTrack(currentTrackIndex + 1);
+            });
+
+            // This logic is for handling the display of subtitles
+            let subtitleTrack;
+            audioPlayer.addEventListener('loadedmetadata', () => {
+                subtitleTrack = audioPlayer.textTracks.length > 0 ? audioPlayer.textTracks[0] : null;
+                if (subtitleTrack) {
+                    subtitleTrack.mode = 'hidden'; // Hide browser's default display
+                }
+            });
+
+            audioPlayer.addEventListener('timeupdate', function() {
+                const subtitleDisplay = document.getElementById('subtitle-display');
+                if (subtitleTrack && subtitleTrack.activeCues && subtitleTrack.activeCues.length > 0) {
+                    const cueText = subtitleTrack.activeCues[0].text;
+                    subtitleDisplay.innerHTML = cueText.replace(/\n/g, '<br>');
+                } else {
+                    subtitleDisplay.innerHTML = '';
+                }
+            });
+
+            await loadPlaylist();
+        });
+    </script>
+</body>
+</html>

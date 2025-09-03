@@ -1,4 +1,3 @@
-
 import os
 import sys
 import subprocess
@@ -18,9 +17,9 @@ except ImportError:
     print("请先运行: pip install openai-whisper")
     sys.exit(1)
 
-def generate_subtitles_for_directory(directory):
+def generate_subtitles_recursively(root_directory):
     """
-    为指定目录下的所有 .mp3 文件生成 .vtt 字幕。
+    为指定目录及其所有子目录下的 .mp3 文件生成 .vtt 字幕。
     """
     print(f"正在加载 Whisper 'base' 模型，初次加载需要下载，请稍候...")
     
@@ -32,30 +31,34 @@ def generate_subtitles_for_directory(directory):
         print("请确保 PyTorch 已正确安装。可以尝试运行: pip install torch torchvision torchaudio")
         return
 
-    print(f"模型加载完毕。开始处理目录: {directory}")
+    print(f"模型加载完毕。开始递归处理目录: {root_directory}")
 
-    if not os.path.isdir(directory):
-        print(f"错误: 目录 '{directory}' 不存在。")
+    if not os.path.isdir(root_directory):
+        print(f"错误: 目录 '{root_directory}' 不存在。")
         return
 
-    mp3_files = sorted([f for f in os.listdir(directory) if f.endswith(".mp3")])
+    mp3_files_to_process = []
+    for dirpath, _, filenames in os.walk(root_directory):
+        for filename in filenames:
+            if filename.endswith(".mp3"):
+                mp3_files_to_process.append(os.path.join(dirpath, filename))
 
-    if not mp3_files:
-        print("在此目录中未找到 .mp3 文件。")
+    if not mp3_files_to_process:
+        print("在指定目录及其子目录中未找到 .mp3 文件。")
         return
 
-    print(f"找到了 {len(mp3_files)} 个 .mp3 文件。")
+    mp3_files_to_process.sort()
+    total_files = len(mp3_files_to_process)
+    print(f"找到了 {total_files} 个 .mp3 文件。")
 
-    for filename in mp3_files:
-        mp3_path = os.path.join(directory, filename)
-        vtt_filename = os.path.splitext(filename)[0] + ".vtt"
-        vtt_path = os.path.join(directory, vtt_filename)
+    for index, mp3_path in enumerate(mp3_files_to_process):
+        vtt_path = os.path.splitext(mp3_path)[0] + ".vtt"
 
         if os.path.exists(vtt_path):
-            print(f"字幕已存在，跳过: {filename}")
+            print(f"字幕已存在，跳过: {mp3_path}")
             continue
 
-        print(f"[{mp3_files.index(filename) + 1}/{len(mp3_files)}] 正在生成字幕: {filename} ...")
+        print(f"[{index + 1}/{total_files}] 正在生成字幕: {mp3_path} ...")
         try:
             # 将语言明确设置为英语以获得最佳效果
             result = model.transcribe(mp3_path, language="en", verbose=False)
@@ -64,18 +67,21 @@ def generate_subtitles_for_directory(directory):
             writer = whisper.utils.get_writer("vtt", os.path.dirname(vtt_path))
             writer(result, vtt_path, {})
             
-            print(f"  -> 字幕已保存到: {vtt_filename}")
+            print(f"  -> 字幕已保存到: {vtt_path}")
 
         except Exception as e:
-            print(f"  处理文件 {filename} 时发生错误: {e}")
+            print(f"  处理文件 {mp3_path} 时发生错误: {e}")
 
     print("\n所有文件处理完成。")
 
 if __name__ == "__main__":
+    # The script now processes the given directory and all its subdirectories.
+    # The argument can be a specific directory like '初三上' or '.' for the current directory.
     if len(sys.argv) != 2:
         print("使用方法: python generate_subtitles.py <目标目录的路径>")
-        print("例如: python generate_subtitles.py 初三上")
+        print("例如，处理 '初三上' 文件夹及其子文件夹: python generate_subtitles.py 初三上")
+        print("例如，处理当前文件夹及其子文件夹: python generate_subtitles.py .")
         sys.exit(1)
     
     target_directory = sys.argv[1]
-    generate_subtitles_for_directory(target_directory)
+    generate_subtitles_recursively(target_directory)
