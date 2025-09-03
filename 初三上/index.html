@@ -93,7 +93,8 @@
             <h1>初三上</h1>
         </header>
         <div id="audio-player-container">
-            <audio id="audio-player" controls></audio>
+            <audio id="audio-player" controls crossorigin="anonymous"></audio>
+            <div id="subtitle-display" style="margin-top: 10px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; min-height: 40px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 1.1em; color: #333; line-height: 1.4;"></div>
         </div>
         <ul id="playlist">
         </ul>
@@ -134,7 +135,12 @@
                 if (index >= tracks.length || index < 0) return;
 
                 currentTrackIndex = index;
-                audioPlayer.src = tracks[index];
+                const trackSrc = tracks[index];
+                const subtitleSrc = trackSrc.replace('.mp3', '.vtt');
+
+                audioPlayer.innerHTML = `<source src="${trackSrc}" type="audio/mpeg"><track default kind="subtitles" srclang="en" src="${subtitleSrc}" label="English">`;
+                
+                audioPlayer.load();
                 audioPlayer.play();
 
                 updatePlayingStatus();
@@ -156,8 +162,37 @@
                 playTrack(currentTrackIndex + 1);
             });
 
+            audioPlayer.addEventListener('loadedmetadata', () => {
+                console.log('[DEBUG] loadedmetadata event fired');
+                if (audioPlayer.textTracks.length > 0) {
+                    const track = audioPlayer.textTracks[0];
+                    console.log('[DEBUG] Text track found. Initial mode:', track.mode);
+                    track.mode = 'hidden';
+                    console.log('[DEBUG] Text track mode set to:', track.mode);
+                } else {
+                    console.log('[DEBUG] No text tracks found.');
+                }
+            });
+
+            audioPlayer.addEventListener('timeupdate', function() {
+                const subtitleDisplay = document.getElementById('subtitle-display');
+                if (!subtitleDisplay) {
+                    console.error('[DEBUG] subtitle-display element NOT FOUND!');
+                    return;
+                }
+
+                if (audioPlayer.textTracks.length > 0 && audioPlayer.textTracks[0].activeCues) {
+                    if (audioPlayer.textTracks[0].activeCues.length > 0) {
+                        const cueText = audioPlayer.textTracks[0].activeCues[0].text;
+                        console.log('[DEBUG] Active cue found. Text:', cueText);
+                        subtitleDisplay.innerHTML = cueText.replace(/\n/g, '<br>');
+                    } else {
+                        subtitleDisplay.innerHTML = '';
+                    }
+                }
+            });
+
             renderPlaylist();
-            playTrack(0);
         });
     </script>
 </body>
