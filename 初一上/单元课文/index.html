@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -23,18 +22,34 @@
             padding: 15px 20px;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         header h1 {
             margin: 0;
-            font-size: 1.5em;
+            font-size: 1.2em;
         }
         header a {
             color: white;
             text-decoration: none;
             position: absolute;
             left: 20px;
-            top: 18px;
-            font-size: 1.2em;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+            padding: 0 10px;
+        }
+        #audio-player-container {
+            position: sticky;
+            top: 58px; /* Height of header */
+            z-index: 10;
+            background: #fff;
+            padding: 10px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        audio {
+            width: 100%;
         }
         #playlist {
             list-style: none;
@@ -42,13 +57,13 @@
             margin: 0;
         }
         #playlist li {
-            padding: 15px 20px;
+            padding: 18px 20px;
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
             transition: background-color 0.3s;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            font-size: 1em;
         }
         #playlist li:hover {
             background-color: #e6f7ff;
@@ -56,25 +71,30 @@
         #playlist li.playing {
             background-color: #1890ff;
             color: white;
-            font-weight: bold;
+            font-weight: 500;
         }
         #playlist li.playing .track-number {
-             color: white;
+             color: #e6f7ff;
         }
         .track-number {
             color: #888;
             margin-right: 15px;
-            font-style: italic;
+            font-size: 0.9em;
+        }
+        .track-name {
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <a href="../../index.html">&larr; 返回</a>
+            <a href="../../index.html">&larr;</a>
             <h1>初一上 (单元课文)</h1>
         </header>
-        <audio id="audio-player" controls style="width: 100%; position: sticky; top: 0; background: #fff;"></audio>
+        <div id="audio-player-container">
+            <audio id="audio-player" controls></audio>
+        </div>
         <ul id="playlist">
         </ul>
     </div>
@@ -97,6 +117,7 @@
                     trackNumber.textContent = `${index + 1}.`;
 
                     const trackName = document.createElement('span');
+                    trackName.className = 'track-name';
                     trackName.textContent = track;
 
                     li.appendChild(trackNumber);
@@ -135,9 +156,8 @@
                 playTrack(currentTrackIndex + 1);
             });
 
-            // Initial setup
             renderPlaylist();
-            playTrack(0); // Autoplay first track
+            playTrack(0);
         });
     </script>
 </body>
