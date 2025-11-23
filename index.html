@@ -103,6 +103,15 @@
             border: 1px solid #d9d9d9;
             border-radius: 6px;
         }
+        .pdf-preview {
+            display: none;
+        }
+        .pdf-preview.show {
+            display: block;
+        }
+        .pdf-toggle {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -130,15 +139,21 @@
                 <li><a href="26年中考英语听说易错5和6题/文档/中考英语听说易错题及解答策略26.docx" download>
                     <span class="icon">📝</span>中考英语听说易错题及解答策略.docx
                 </a></li>
-                <li><a href="26年中考英语听说易错5和6题/文档/听力材料.pdf" target="_blank">
+                <li><a href="javascript:void(0)" class="pdf-toggle" onclick="togglePdf()">
                     <span class="icon">📄</span>听力材料.pdf（点击预览）
                 </a></li>
             </ul>
-            <div class="pdf-preview">
-                <h3>PDF预览：听力材料</h3>
+            <div class="pdf-preview" id="pdfPreview">
+                <h3>PDF预览：听力材料 <a href="26年中考英语听说易错5和6题/文档/听力材料.pdf" target="_blank" style="font-size: 0.9em; margin-left: 10px;">新窗口打开</a></h3>
                 <iframe src="26年中考英语听说易错5和6题/文档/听力材料.pdf"></iframe>
             </div>
         </div>
     </div>
+    <script>
+        function togglePdf() {
+            var preview = document.getElementById('pdfPreview');
+            preview.classList.toggle('show');
+        }
+    </script>
 </body>
 </html>
