@@ -120,6 +120,18 @@
         .pdf-toggle {
             cursor: pointer;
         }
+        /* 不蒜子统计样式 */
+        .site-stats {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e8e8e8;
+            text-align: center;
+            color: #999;
+            font-size: 0.85em;
+        }
+        .site-stats span {
+            margin: 0 10px;
+        }
     </style>
 </head>
 <body>
@@ -156,6 +168,13 @@
                 <iframe src="26年中考英语听说易错5和6题/文档/听力材料.pdf"></iframe>
             </div>
         </div>
+
+        <!-- 不蒜子统计 -->
+        <div class="site-stats">
+            <span>本站总访问量 <span id="busuanzi_value_site_pv"></span> 次</span>
+            <span>|</span>
+            <span>访客数 <span id="busuanzi_value_site_uv"></span> 人</span>
+        </div>
     </div>
     <script>
         function togglePdf() {
@@ -163,5 +182,7 @@
             preview.classList.toggle('show');
         }
     </script>
+    <!-- 不蒜子统计脚本 -->
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 </body>
 </html>
